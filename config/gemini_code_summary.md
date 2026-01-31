@@ -1,4 +1,4 @@
-# Config Directory Code Summary
+# Gemini: Config Directory Code Summary
 
 ## Overview
 This directory contains configuration files used to customize the training and evaluation of nanoGPT models. These files are Python scripts that define specific hyperparameter overrides.

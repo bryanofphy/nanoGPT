@@ -1,4 +1,4 @@
-# Shakespeare Data Preparation (Character-Level)
+# Gemini: Shakespeare Data Preparation (Character-Level)
 
 ## Overview
 This directory prepares the "Tiny Shakespeare" dataset for character-level language modeling. Unlike the other data directories which use BPE, this implementation treats each character as a token.

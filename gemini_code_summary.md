@@ -1,4 +1,4 @@
-# Root Directory Code Summary
+# Gemini: Root Directory Code Summary
 
 ## Overview
 This directory contains the core implementation of the nanoGPT project, a simple and efficient repository for training and fine-tuning GPT language models. It includes the model architecture definition, the main training loop, and scripts for inference (sampling).
