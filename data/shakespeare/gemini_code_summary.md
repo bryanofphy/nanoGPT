@@ -1,4 +1,4 @@
-# Shakespeare Data Preparation (BPE)
+# Gemini: Shakespeare Data Preparation (BPE)
 
 ## Overview
 This directory handles the preparation of the "Tiny Shakespeare" dataset for fine-tuning GPT-2 models using standard BPE (Byte Pair Encoding).

@@ -1,4 +1,4 @@
-# OpenWebText Data Preparation
+# Gemini: OpenWebText Data Preparation
 
 ## Overview
 This directory contains the script to prepare the OpenWebText dataset for training GPT-2 models. OpenWebText is a reproduction of the WebText dataset used by OpenAI to train GPT-2.
