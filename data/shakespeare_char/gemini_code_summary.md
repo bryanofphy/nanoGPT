@@ -23,3 +23,6 @@ python data/shakespeare_char/prepare.py
 ```
 
 This is used for training small, character-level models (e.g., `config/train_shakespeare_char.py`).
+
+## Recent Updates (2026-02-03)
+-   **Global:** Core training logic in `root/train.py` was updated (warmup LR calculation fix). No specific changes in this directory.

@@ -30,3 +30,6 @@ To fine-tune on Shakespeare:
 ```bash
 python train.py config/finetune_shakespeare.py
 ```
+
+## Recent Updates (2026-02-03)
+-   **Global:** Core training logic in `root/train.py` was updated (warmup LR calculation fix). No specific changes in this directory.

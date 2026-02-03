@@ -57,3 +57,6 @@ python sample.py --out_dir=out-shakespeare-char
 ```bash
 python bench.py
 ```
+
+## Recent Updates (2026-02-03)
+-   **`train.py` Optimization:** The warmup learning rate calculation was fixed to ensure a non-zero learning rate at iteration 0. The formula changed to `(it + 1) / (warmup_iters + 1)` (previously implicit `it / warmup_iters`). This ensures smoother training initialization.
