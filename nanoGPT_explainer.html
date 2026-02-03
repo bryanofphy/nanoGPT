@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Understanding nanoGPT: A Visual Code Walkthrough</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.0/dist/mermaid.min.js"></script>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --secondary: #475569;
+            --bg: #f8fafc;
+            --surface: #ffffff;
+            --text: #1e293b;
+            --code-bg: #1e1e1e;
+            --code-text: #e2e8f0;
+            --inline-code-bg: #f1f5f9;
+            --inline-code-text: #be185d;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: var(--text);
+            background: var(--bg);
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background: var(--surface);
+            padding: 2rem;
+            border-bottom: 1px solid #e2e8f0;
+            text-align: center;
+        }
+        h1 { margin: 0; color: var(--primary); }
+        .subtitle { color: var(--secondary); font-size: 1.1rem; }
+        
+        main {
+            max-width: 1000px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+        
+        section {
+            background: var(--surface);
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+        
+        h2 { border-bottom: 2px solid var(--primary); padding-bottom: 0.5rem; margin-top: 0; }
+        h3 { color: var(--primary); margin-top: 1.5rem; }
+        
+        /* Inline code */
+        code {
+            font-family: "Menlo", "Monaco", "Courier New", monospace;
+            background: var(--inline-code-bg);
+            color: var(--inline-code-text);
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+        
+        /* Code blocks */
+        pre {
+            background: var(--code-bg);
+            color: var(--code-text);
+            padding: 1.2rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid #334155;
+            line-height: 1.45;
+        }
+        
+        pre code {
+            background: transparent;
+            color: inherit;
+            padding: 0;
+            border-radius: 0;
+            font-size: inherit;
+        }
+        
+        .diagram-container {
+            display: block;
+            margin: 2rem auto;
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            overflow-x: auto;
+            text-align: center;
+        }
+        
+        .mermaid {
+            display: inline-block; /* Allow container to wrap tight to content */
+            width: auto;
+            min-width: 300px;
+        }
+
+        /* Constrain the box for vertical charts to prevent scaling up too much */
+        .vertical-flow {
+            max-width: 500px;
+        }
+
+        /* Horizontal/Sequence flows can be wider but still centered */
+        .horizontal-flow, .sequence-flow {
+            max-width: 100%;
+        }
+
+        .note {
+            background: #eff6ff;
+            border-left: 4px solid var(--primary);
+            padding: 1rem;
+            margin: 1rem 0;
+            font-size: 0.95rem;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Understanding nanoGPT</h1>
+    <p class="subtitle">A visual guide to the inner workings of a Transformer Language Model</p>
+</header>
+
+<main>
+
+    <section id="intro">
+        <h2>1. Introduction</h2>
+        <p>
+            <strong>nanoGPT</strong> is a simple, clean implementation of the GPT (Generative Pre-trained Transformer) architecture.
+            At its core, it is a <strong>Predictor</strong>: given a sequence of words (tokens), it predicts the <em>next</em> word.
+        </p>
+        <p>
+            The entire magic happens in <code>model.py</code>. The model takes integer indices as input (representing words/characters) and outputs probabilities for the next token in the sequence.
+        </p>
+    </section>
+
+    <section id="high-level">
+        <h2>2. High-Level Architecture</h2>
+        <p>The data flows through the model in a strictly sequential path. Here is the big picture:</p>
+        
+        <div class="diagram-container vertical-flow">
+            <div class="mermaid">
+            flowchart TD
+                Input["Input Indices<br>(Batch, Time)"] --> Embed["Embedding Layer<br>Token + Position"]
+                Embed --> Block1["Transformer Block 1"]
+                Block1 --> Block2["Transformer Block 2"]
+                Block2 --> BlockDots[...]
+                BlockDots --> BlockN["Transformer Block N"]
+                BlockN --> Norm["Final LayerNorm"]
+                Norm --> Head["Linear Head<br>(Decoder)"]
+                Head --> Logits["Logits<br>(Unnormalized Scores)"]
+                
+                style Input fill:#f9f,stroke:#333
+                style Logits fill:#f9f,stroke:#333
+                style Embed fill:#bbf,stroke:#333
+                style Head fill:#bbf,stroke:#333
+            </div>
+        </div>
+        
+        <div class="note">
+            <strong>Key Concept:</strong> The input shape is <code>(B, T)</code> where <strong>B</strong> is Batch Size (number of parallel sequences) and <strong>T</strong> is Time (sequence length). The model processes everything in parallel!
+        </div>
+    </section>
+
+    <section id="embeddings">
+        <h2>3. The Embeddings</h2>
+        <p>Before the neural network can understand text, we must convert integer IDs into dense vectors.</p>
+        <ul>
+            <li><strong>Token Embeddings (<code>wte</code>):</strong> Look up the meaning of the word itself (e.g., "apple").</li>
+            <li><strong>Position Embeddings (<code>wpe</code>):</strong> Look up the position in the sentence (e.g., "1st word", "2nd word").</li>
+        </ul>
+        <pre><code># Inside GPT.forward()
+tok_emb = self.transformer.wte(idx) # Shape: (B, T, n_embd)
+pos_emb = self.transformer.wpe(pos) # Shape: (T, n_embd)
+x = self.transformer.drop(tok_emb + pos_emb)</code></pre>
+        <p>We simply <strong>add</strong> them together. Now the vector <code>x</code> contains both "what the word is" and "where it is".</p>
+    </section>
+
+    <section id="transformer-block">
+        <h2>4. The Transformer Block</h2>
+        <p>This is the workhorse. A single <code>Block</code> consists of two main sub-layers:</p>
+        <ol>
+            <li><strong>Communication:</strong> Causal Self-Attention (The tokens "talk" to each other).</li>
+            <li><strong>Computation:</strong> MLP (Feed-Forward Network) (The tokens "think" individually).</li>
+        </ol>
+
+        <div class="diagram-container vertical-flow">
+            <div class="mermaid">
+            flowchart TD
+                Input("Input x") --> LN1["LayerNorm 1"]
+                LN1 --> Attn["Causal Self-Attention"]
+                Attn --> Add1((+))
+                Input --> Add1
+                
+                Add1 --> LN2["LayerNorm 2"]
+                LN2 --> MLP["MLP<br>Feed-Forward"]
+                MLP --> Add2((+))
+                Add1 --> Add2
+                
+                Add2 --> Output("Output x")
+                
+                style Attn fill:#ff9,stroke:#333
+                style MLP fill:#ff9,stroke:#333
+                style Add1 fill:#fff,stroke:#333,stroke-width:2px
+                style Add2 fill:#fff,stroke:#333,stroke-width:2px
+            </div>
+        </div>
+
+        <p>Notice the <strong>Residual Connections</strong> (the arrows bypassing the layers to the <code>(+)</code> circle). This is crucial for training deep networks, allowing gradients to flow easily.</p>
+    </section>
+
+    <section id="attention">
+        <h2>5. Causal Self-Attention (The "Brain")</h2>
+        <p>This is where the magic happens. In <strong>Causal</strong> Self-Attention, a token can only look at <em>previous</em> tokens, never future ones.</p>
+        
+        <h3>The Logic</h3>
+        <p>Every token emits three vectors:</p>
+        <ul>
+            <li><strong>Query (Q):</strong> "What am I looking for?"</li>
+            <li><strong>Key (K):</strong> "What do I contain?"</li>
+            <li><strong>Value (V):</strong> "If you like me, here is my information."</li>
+        </ul>
+
+        <div class="diagram-container horizontal-flow">
+            <div class="mermaid">
+            flowchart LR
+                Input --> Linear["Linear Projection"]
+                Linear --> Split{"Split"}
+                Split --> Q[Query]
+                Split --> K[Key]
+                Split --> V[Value]
+                
+                Q --> MatMul1((Dot Product))
+                K --> MatMul1
+                MatMul1 --> Scale["Scale & Mask"]
+                Scale --> Softmax[Softmax]
+                Softmax --> Weights["Attention Weights"]
+                
+                Weights --> MatMul2((MatMul))
+                V --> MatMul2
+                MatMul2 --> Out[Output]
+                
+                style Scale fill:#fca,stroke:#333
+            </div>
+        </div>
+
+        <h3>The "Causal" Mask</h3>
+        <p>Because we are predicting the future, token #5 cannot know what token #6 is. We enforce this with a <strong>Lower Triangular Mask</strong>.</p>
+        <pre><code># The Mask (Tril) looks like this:
+[1, 0, 0]  # Token 1 sees only Token 1
+[1, 1, 0]  # Token 2 sees Token 1 and 2
+[1, 1, 1]  # Token 3 sees Token 1, 2, and 3</code></pre>
+        <p>In the code, we set the upper triangle to <code>-infinity</code> before Softmax. This makes the probability of attending to future tokens exactly <strong>zero</strong>.</p>
+    </section>
+
+    <section id="mlp">
+        <h2>6. The MLP (Feed-Forward)</h2>
+        <p>After the tokens gather information from each other via Attention, they "think" about it individually using a standard neural network.</p>
+        <pre><code>class MLP(nn.Module):
+    def __init__(self, config):
+        # Expands dimensionality by 4x
+        self.c_fc    = nn.Linear(config.n_embd, 4 * config.n_embd)
+        self.gelu    = nn.GELU() # Activation function
+        # Projects back to original dimensionality
+        self.c_proj  = nn.Linear(4 * config.n_embd, config.n_embd)</code></pre>
+    </section>
+
+    <section id="training">
+        <h2>7. Training Loop (Simulated)</h2>
+        <p>How does it learn? We feed it a sequence, ask it to predict the next token, and punish it if it's wrong.</p>
+        
+        <div class="diagram-container sequence-flow">
+            <div class="mermaid">
+            sequenceDiagram
+                autonumber
+                participant Data
+                participant Model
+                participant Loss
+                participant Optimizer
+                
+                Data->>Model: Inputs [A, B, C]
+                Note right of Data: Targets [B, C, D]
+                Model->>Model: Forward Pass
+                Model->>Loss: Logits (Predictions)
+                Loss->>Loss: Compare Logits vs Targets (Cross Entropy)
+                Loss->>Model: Backward Pass (Calculate Gradients)
+                Model->>Optimizer: Gradients
+                Optimizer->>Model: Update Weights (Step)
+            </div>
+        </div>
+    </section>
+
+</main>
+
+<script>
+    mermaid.initialize({ 
+        startOnLoad: true, 
+        theme: 'neutral',
+        themeVariables: {
+            fontSize: '16px',
+            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif'
+        },
+        flowchart: { useMaxWidth: false, htmlLabels: true, curve: 'basis' },
+        sequence: { useMaxWidth: false, mirrorActors: false, boxMargin: 10 }
+    });
+</script>
+
+</body>
+</html>
