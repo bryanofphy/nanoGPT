@@ -23,3 +23,6 @@ python data/openwebtext/prepare.py
 ```
 
 This will create `train.bin` (~17GB) and `val.bin` (~8.5MB) in this directory.
+
+## Recent Updates (2026-02-03)
+-   **Global:** Core training logic in `root/train.py` was updated (warmup LR calculation fix). No specific changes in this directory.
